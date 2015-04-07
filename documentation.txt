@@ -1,0 +1,13 @@
+The schema is in tomcat/solr/collection1/conf/schema.xml
+
+To restart the solr collection to reload the schema, we issue a GET to:
+http://ist441solr.up.ist.psu.edu:8203/solr/admin/cores?action=RELOAD&core=collection1
+
+To query, we issue a GET to:
+http://ist441.solr.up.ist.psu.edu:8203/solr/collection1/select?q=eventdate%3A...&title=...
+
+Include this in the query:
+eventdate:[1995-12-31T23:59:59.999Z TO 2007-03-06T00:00:00Z]
+
+to search for a date range
+

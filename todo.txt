@@ -1,0 +1,3 @@
+Bryan: Work on UI
+Sam: Custom regex extractor, check if we need to re-crawl
+Jake: Look for python packages to extract dates,locations
