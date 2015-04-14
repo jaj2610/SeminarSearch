@@ -1,7 +1,9 @@
 from datetime import date, timedelta, datetime
 import re
+import traceback
 
 import warc
+import solr
 from bs4 import BeautifulSoup
 import dateutil.parser as dparser
 
@@ -50,55 +52,66 @@ def find_options(s):
     return False
 
 f = warc.open(
-    "heritrix-3.2.0/jobs/PSUcrawlSuccessfully/20150227014701/warcs/WEB-20150227014710630-00000-47191~localhost.localdomain~8083.warc.gz")
+    "heritrix-3.2.0/jobs/PsuFinalCrawl/20150413232041/warcs/WEB-20150413232119278-00000-16756~localhost.localdomain~8083.warc.gz")
 s = solr.SolrConnection('http://127.0.0.1:8203/solr/collection1')
 for record in f:
-    if record.type == 'response':
-        if "psu.edu" not in record.url:
-            continue
-        seminar_count = []
-        soup = BeautifulSoup(record.payload.read())
-        seminars = soup.find_all(text=has_seminar)
-        if len(seminar_count) >= 1:
-            potential_dates = set()
-            potential_times = set()
-            potential_locs = set()
-            tags = soup.find_all(text=find_options)
-            print "----------"
-            likelihood = min(len(seminar_count), 2)
-            if potential_times:
-                likelihood += 1
-            if potential_dates:
-                likelihood += 1
-            if potential_locs:
-                likelihood += 3
-            if likelihood >= 5:
-                fixed_times = []
-                for time in potential_times:
-                    try:
-                        fixed_times.append(
-                            datetime.strptime(time.replace('.', '').strip().strftime('%H:%M:00.932Z'), '%I:%M %p'))
-                    except:
+    try:
+        if record.type == 'response':
+            if "psu.edu" not in record.url:
+                continue
+            seminar_count = []
+            soup = BeautifulSoup(record.payload.read())
+            seminars = soup.find_all(text=has_seminar)
+            if len(seminar_count) >= 1:
+                potential_dates = set()
+                potential_times = set()
+                potential_locs = set()
+                tags = soup.find_all(text=find_options)
+                likelihood = min(len(seminar_count), 2)
+                if potential_times:
+                    likelihood += 1
+                if potential_dates:
+                    likelihood += 1
+                if potential_locs:
+                    likelihood += 3
+                if likelihood >= 5:
+                    fixed_times = []
+                    for time in potential_times:
                         try:
                             fixed_times.append(
                                 datetime.strptime(time.replace('.', '').strip().strftime('%H:%M:00.932Z'), '%I:%M %p'))
                         except:
-                            pass
-                etime = min(fixed_times)
-                if not etime:
-                    etime = '00:00:00.032Z'
-                edate = max(potential_dates).strftime('%Y-%m-%dT') + ''
-                if not edate:
-                    edate = date.today().strftime('%Y-%m-%dT')
-                s.add(URL=record.url,
-                      eventdate=edate+etime,
-                      title=soup.title,
-                      speaker='Bobert',
-                      path='',
-                      recordOffset=1,
-                      file_content=str(soup))
-                s.commit()
-                print potential_times
-                print potential_dates
-                print potential_locs
-                print record.url
+                            try:
+                                fixed_times.append(
+                                    datetime.strptime(time.replace('.', '').strip().strftime('%H:%M:00.932Z'), '%I:%M %p'))
+                            except:
+                                pass
+                    try:
+                        etime = min(fixed_times)
+                    except:
+                        etime = '00:00:00.032Z'
+                    try:
+                        edate = max(potential_dates).strftime('%Y-%m-%dT') + ''
+                    except:
+                        edate = date.today().strftime('%Y-%m-%dT')
+                    try:
+                        title = soup.title
+                    except:
+                        title = "Seminar"
+                    speaker = ""
+                    s.add(URL=record.url,
+                          eventdate=edate+etime,
+                          title=title,
+                          speaker=speaker,
+                          path='',
+                          recordOffset=1,
+                          file_content=soup.prettify())
+                    #s.commit()
+                    print "--------"
+                    print potential_times
+                    print potential_dates
+                    print potential_locs
+                    print record.url
+    except Exception:
+        print traceback.format_exc()
+        pass
