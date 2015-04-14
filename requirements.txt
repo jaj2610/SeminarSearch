@@ -1,1 +1,8 @@
+[u'Thursday, September 30, 2015', u'\nTime: 11:45 - 5:00 p.m.', u'\nlocation @ Assembly Room, The Nittany Lion Inn']
+['11:45']
+[datetime.date(2015, 9, 30)]
+['Assembly Room, The Nittany Lion Inn']
 beautifulsoup4==4.3.2
+python-dateutil==2.4.2
+six==1.9.0
+timelib==0.2.4
