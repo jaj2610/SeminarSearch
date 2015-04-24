@@ -11,3 +11,15 @@ eventdate:[1995-12-31T23:59:59.999Z TO 2007-03-06T00:00:00Z]
 
 to search for a date range
 
+Improve getting dates
+Test dragnet
+Calais for people, locations
+Seminar classification
+
+
+Thursday: 1 - 4
+Thursday: 5:30+
+Friday: 11 - 1
+Friday 2:30 - 7
+Saturday 8-4
+Monday all day

@@ -6,6 +6,7 @@ import warc
 import solr
 from bs4 import BeautifulSoup
 import dateutil.parser as dparser
+from dragnet import content_extractor
 
 seminar_count = []
 potential_dates = set()

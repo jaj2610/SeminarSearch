@@ -1,7 +1,9 @@
-from bs4 import BeautifulSoup
 import dateutil.parser as dparser
 from datetime import date, timedelta
 import re
+
+from bs4 import BeautifulSoup
+from dragnet import content_extractor
 
 seminar_count = 0
 potential_dates = []
@@ -49,12 +51,15 @@ def has_time(s):
 
 f = open('test.html')
 # print f.read().encode('utf-8')
-soup = BeautifulSoup(f.read().encode('utf-8'))
-# print soup.get_text()
-seminars = soup.find_all(text=has_seminar)
-if seminar_count >= 1:
-    tags = soup.find_all(text=has_time)
-    print tags
-    print potential_times
-    print potential_dates
-    print potential_locs
+content = content_extractor.analyze(f.read().encode('utf-8'),blocks=True)
+print [c.text for c in content]
+# print content
+# soup = BeautifulSoup(content)
+# # print soup.get_text()
+# seminars = soup.find_all(text=has_seminar)
+# if seminar_count >= 1:
+#     tags = soup.find_all(text=has_time)
+#     print tags
+#     print potential_times
+#     print potential_dates
+#     print potential_locs
