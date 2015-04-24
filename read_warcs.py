@@ -23,8 +23,7 @@ for record in f:
             doc = parser.read_doc(content)
             if doc:
                 s.add(URL=record.url,**doc)
-
-            # s.commit()
+                # s.commit()
     except Exception:
         print traceback.format_exc()
         pass

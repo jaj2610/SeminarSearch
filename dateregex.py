@@ -2,9 +2,9 @@ import re
 from datetime import datetime
 
 month_options = "|".join(['january', 'february', 'march', 'april', 'may',
-                          'june', 'july', 'august', 'september', 'november',
+                          'june', 'july', 'august', 'september', 'october', 'november',
                           'december', 'jan', 'feb', 'mar', 'apr', 'may', 'jun',
-                          'jul', 'aug', 'sep', 'nov', 'dec'])
+                          'jul', 'aug', 'oct', 'sep', 'nov', 'dec'])
 month_map = {'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
              'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12}
 
@@ -246,6 +246,7 @@ def test_get_dates():
            == [datetime(1992, 4, 22), datetime(2010, 6, 5)])
     assert(get_dates("The event will the the 23rd of April, 2991") == [datetime(2991, 4, 23)])
     assert(get_dates("When: 23rd of April, 2991") == [datetime(2991, 4, 23)])
+    assert(get_dates('06 October 2015 04:00 PM') == [datetime(2015, 10, 6)])
 
     # Non-matches
     assert(get_dates("I had 23 things to do that day") == [])
