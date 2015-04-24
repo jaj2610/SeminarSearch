@@ -1,9 +1,9 @@
 from datetime import date, timedelta, datetime
 import re
 
-
 import dateregex
 from dragnet import content_extractor, content_comments_extractor
+from bs4 import BeautifulSoup
 
 class Parser(object):
 
@@ -11,20 +11,18 @@ class Parser(object):
         self.reset_data()
 
     def find_info(self, s):
-        s = s.strip()
-        if s:
-            # Times
-            m = re.match(r'.*?(\d?\s*\d:\s*\d\s*\d\s*([pa]\s*\.?m\s*\.?)?).*', s, re.IGNORECASE)
-            if m:
-                self.potential_times.add(m.group(1).strip())
+        # Times
+        m = re.match(r'.*?(\d?\s*\d:\s*\d\s*\d\s*([pa]\s*\.?m\s*\.?)?).*', s, re.IGNORECASE)
+        if m:
+            self.potential_times.add(m.group(1).strip())
 
-            # Locations
-            m = re.match(r'.*(location|where)\s*[\-\:\@]?\s*(.*)', s, re.IGNORECASE)
-            if m:
-                self.potential_locs.add(m.group(2).strip())
-            
-            # Dates
-            [self.potential_dates.add(date) for date in dateregex.get_dates(s)]
+        # Locations
+        m = re.match(r'.*(location|where)\s*[\-\:\@]?\s*(.*)', s, re.IGNORECASE)
+        if m:
+            self.potential_locs.add(m.group(2).strip())
+        
+        # Dates
+        [self.potential_dates.add(date) for date in dateregex.get_dates(s)]
 
     def reset_data(self):
         self.seminar_texts = []
@@ -36,19 +34,16 @@ class Parser(object):
         
         self.reset_data()
 
-        blocks = content_comments_extractor.analyze(html,blocks=True)
-        # print [block.text for block in blocks]
-        x = [self.has_seminar(block.text) for block in blocks]
-        print self.seminar_texts
-        # print x
-        import pprint
-        pprint.pprint([block.text for block in blocks])
-
+        # blocks = content_comments_extractor.analyze(html,blocks=True)
+        blocks = BeautifulSoup(html).get_text().split('\n')
+        blocks = filter(lambda x: x != '',[block.strip().encode('ascii','ignore') for block in blocks])
+        [self.has_seminar(block) for block in blocks]
         if len(self.seminar_texts) > 0:
-            [self.find_info(block.text) for block in blocks]
+            [self.find_info(block) for block in blocks]
             print self.potential_times
             print self.potential_dates
             print self.potential_locs
+            print "------"
             likelihood = min(len(self.seminar_texts), 2)
             if self.potential_times:
                 likelihood += 1
@@ -91,13 +86,9 @@ class Parser(object):
         return None
 
     def has_seminar(self,s):
-        x = filter(None, s.split('\n'))
-        if not x:
-            return
-        for line in x:
-            if re.match(r'.*(seminar)|(colloquium)|(forum)\s+.*', line, re.IGNORECASE):
-                self.seminar_texts.append(line)
-                return True
+        if re.match(r'.*(seminar)|(colloquium)|(forum)\s+.*', s, re.IGNORECASE):
+            self.seminar_texts.append(s)
+            return True
         return False
 
 

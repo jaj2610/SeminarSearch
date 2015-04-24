@@ -59,7 +59,7 @@ def get_numerical_date(text):
         else:
             if not m.group(6):
                 year_fmt = 'y'
-                
+
             year = m.group(5)
 
         return (datetime.strptime("{year}-{month}-{day}".format(year=year, month=month, day=day),
@@ -161,16 +161,16 @@ def get_backwards_textual_date(text):
             year = m.group(7)
 
         return (datetime.strptime("{year}-{month}-{day}".format(year=year, month=month, day=day),
-                                 "%{year_fmt}-%m-%d".format(year_fmt=year_fmt)), m.span())
+                                  "%{year_fmt}-%m-%d".format(year_fmt=year_fmt)), m.span())
     return (None, None)
 
 
 def get_dates(text):
     """Gets all the dates in text"""
-    
+
     dates = []
     # get_backwards_textual needs to come before get_textual
-    for date_finder in [get_numerical_date, get_backwards_textual_date, get_textual_date]:
+    for date_finder in [get_backwards_textual_date, get_textual_date, get_numerical_date]:
         while True:
             try:
                 date, span = date_finder(text)
@@ -229,6 +229,7 @@ def test_get_dates():
     assert(get_dates("April 03 1992") == [datetime(1992, 4, 3)])
     assert(get_dates("April 3rd") == [datetime(datetime.today().year, 4, 3)])
     assert(get_dates("April 22th, 1992") == [datetime(1992, 4, 22)])
+    assert(get_dates('Monday, April 27, 2015 - 4:00pm') == [datetime(2015, 4, 27, 0, 0)])
 
     # Backwards Textual
     assert(get_dates("5 April 1992") == [datetime(1992, 4, 5)])
@@ -241,7 +242,8 @@ def test_get_dates():
     assert(get_dates("2nd April 1992") == [datetime(1992, 4, 2)])
     assert(get_dates("3rd of April, 1992") == [datetime(1992, 4, 3)])
     assert(get_dates("22nd Apr., 1992") == [datetime(1992, 4, 22)])
-    assert(get_dates("22nd Apr., 1992 and 5th of June, 2010") == [datetime(1992, 4, 22),datetime(2010,6,5)])
+    assert(get_dates("22nd Apr., 1992 and 5th of June, 2010")
+           == [datetime(1992, 4, 22), datetime(2010, 6, 5)])
     assert(get_dates("The event will the the 23rd of April, 2991") == [datetime(2991, 4, 23)])
     assert(get_dates("When: 23rd of April, 2991") == [datetime(2991, 4, 23)])
 
