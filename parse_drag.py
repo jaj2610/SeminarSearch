@@ -1,8 +1,10 @@
 from datetime import date, timedelta, datetime
 import re
 
-from dragnet import content_extractor, content_comments_extractor
+
+from dragnet import content_extractor
 from bs4 import BeautifulSoup
+import requests
 
 import dateregex
 import timeregex
@@ -46,13 +48,24 @@ class Parser(object):
             self.docs = []
             self.all_dates = set()
 
-    def read_doc(self, html, sub_doc=False):
+    def read_doc(self, html, sub_doc=False, url=None):
         """Read html and try to find a seminar(s)
             if sub_doc, this is a piece of a document and we don't want to keep recursing"""
+
+        if url:
+            if "https" in url:
+                html = requests.get(url.replace('https','http')).content.decode('utf-8').encode('ascii','ignore')
+
+        if not sub_doc:
+            self.reset_data(full=True)
 
         # blocks = content_comments_extractor.analyze(html,blocks=True)
         soup = BeautifulSoup(html)
 
+        try:
+            self.title = soup.title.text.decode('utf-8').encode('ascii','ignore')
+        except:
+            self.title = "Title"
         def is_leaf_and_has_text(tag):
             for x in tag.stripped_strings:
                 return True
@@ -64,27 +77,20 @@ class Parser(object):
         [self.has_seminar(tag.text) for tag in tags]
 
         if len(self.seminar_texts) > 0 and not sub_doc:
-
-            self.reset_data(full=True)
+            
             table_rows = soup.find_all('tr')
             for row in table_rows:
                 self.read_doc(str(row), sub_doc=True)
 
-            self.reset_data()
-            # self.people, self.facilities = get_entities(html)
-
-            self.find_seminar(tags)
+            self.find_seminar(tags,html)
 
         if sub_doc:
-            self.reset_data()
-
-            # self.people, self.facilities = get_entities(html)
-
-            self.find_seminar(tags)
+            self.find_seminar(tags,html)
 
         return self.docs
 
-    def find_seminar(self, tags):
+    def find_seminar(self, tags, html):
+        self.reset_data()
         [self.find_info(tag) for tag in tags]
         likelihood = 0
         if self.times:
@@ -92,6 +98,7 @@ class Parser(object):
         if self.dates:
             likelihood += 1
         if likelihood >= 2:
+            self.people, self.facilities = get_entities(html)
             try:
                 etime = min(self.times)
             except Exception as e:
@@ -102,34 +109,35 @@ class Parser(object):
                 edate = max(self.dates, key=lambda x: (x[1], x[0]))[0].strftime('%Y-%m-%dT') + ''
             except:
                 edate = date.today().strftime('%Y-%m-%dT')
-            try:
-                title = "Title"
-            except:
-                title = "Seminar"
+                
             if self.people:
-                print self.people
-                speaker = max(self.people, key=lambda x: float(x['relevance']))['text'].encode('utf-8')
+                speaker = max(self.people, key=lambda x: float(x['relevance']))['text'].encode('ascii','ignore')
+                likelihood += 1
             else:
                 speaker = "Speaker"
             if self.facilities:
-                print self.facilities
-                location = max(self.facilities, key=lambda x: float(x['relevance']))['text'].encode('utf-8')
+                location = max(self.facilities, key=lambda x: float(x['relevance']))['text'].encode('ascii','ignore')
+                likelihood += 1
             else:
                 location = "Location"
 
-            self.docs.append({
-                'eventdate': edate + etime,
-                'title': title,
-                'speaker': speaker,
-                'location': location,
-                'path': '',
-                # 'file_content':html,
-                'recordOffset': 1
-            })
+            summary = content_extractor.analyze(html).decode('utf-8').encode('ascii','ignore')
+
+            if likelihood >= 2:
+                self.docs.append({
+                    'path': '',
+                    'file_content':html,
+                    'summary': summary,
+                    'eventdate': edate + etime,
+                    'title': self.title,
+                    'speaker': speaker,
+                    'location': location,
+                    'recordOffset': 1
+                })
 
     def has_seminar(self, s):
         for line in s.split('\n'):
-            if re.match(r'.*(seminar)|(colloquium)|(forum)\s+.*', line, re.IGNORECASE):
+            if re.match(r'.*(seminars?)|(colloquiums?)|(forums?)\s+.*', line, re.IGNORECASE):
                 self.seminar_texts.append(line)
                 return True
         return False
